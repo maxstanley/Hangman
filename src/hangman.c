@@ -8,7 +8,7 @@
 
 #define BUFFER_SIZE 1024
 #define LIVES 11
-#define PORT 3000
+#define PORT 3001
 #define QUEUE_LENGTH 10 // Number of connections that can queue
 
 extern time_t time();
@@ -16,8 +16,25 @@ extern time_t time();
 void play_hangman(int in, FILE * fp);
 int line_count(FILE * fp, int line);
 
-int main()
+int main(int argc, char * argv[])
 {
+
+	if (argc != 2)
+	{
+		printf("Invalid arguments\n");
+		printf("Expecting dictionary file path\n");
+		return -1;
+	}
+
+//	char *filename = "/usr/share/dict/british-english";
+	FILE * fp = fopen(argv[1], "r");
+
+	if (fp == NULL)
+	{
+		printf("File %s not accessible\n", argv[1]);
+		return -1;
+	}
+	
 	struct sockaddr_in server;
 
 	// Prevents Zombies
@@ -47,9 +64,6 @@ int main()
 
 	struct sockaddr_in client;
 	socklen_t client_length = sizeof(struct sockaddr_in);
-
-	char *filename = "/usr/share/dict/british-english";
-	FILE * fp = fopen(filename, "r");
 
 	// Count the number of lines
 	int lines = line_count(fp, RAND_MAX);
@@ -81,6 +95,7 @@ int main()
 		}
 	}
 
+	pclose(fp);
 	close(sock);
 	return 0;
 }
@@ -132,7 +147,7 @@ void get_current_line(FILE * file, char ** word)
 		++i;
 	}
 
-	*word = (char *)malloc(i + 1);
+	*word = (char *)calloc(i + 1, sizeof(buffer[0]));
 	strcpy(*word, buffer);
 }
 
@@ -191,5 +206,7 @@ void play_hangman(int connection, FILE * fp)
 		sprintf(buffer, "I'm Sorry! The word was %s\n", word);
 		write(connection, buffer, strlen(buffer));
 	}
+
+	free(word);
 }
 
